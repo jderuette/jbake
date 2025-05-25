@@ -88,6 +88,8 @@ public class MdParserTest {
     private File mdGfmTasklist;
     
     private File mdGfmUsers;
+    
+    private File mdGitLab;
 
     private String validHeader = "title=Title\nstatus=draft\ntype=post\n~~~~~~";
 
@@ -342,6 +344,16 @@ public class MdParserTest {
         out.println("A GitHub User @jderuette");
         out.close();
         
+        mdGitLab = folder.newFile("mdGitLab.md");
+        out = new PrintWriter(mdGitLab);
+        out.println(validHeader);
+        out.println(">>> a multiline block quote \n" + 
+        			"    and a seconde line \n" +
+        			"    and a third and last\n" +
+        			"\n" +
+        			"[- deleted marker-]" +
+        			"[+added marker+]");
+        out.close();
     }
 
     @Test
@@ -1036,18 +1048,44 @@ public class MdParserTest {
         config.setMarkdownExtensions("");
         config.setMarkdownExtensions("GfmUsers");
 
-        // Test with gfmIssues
+        // Test with gfmUsers
         Parser parser = new Parser(config);
         DocumentModel documentModel = parser.processFile(mdGfmUsers);
         Assert.assertNotNull(documentModel);
         assertThat(documentModel.getBody()).contains("<p>A GitHub User <a href=\"https://github.com/jderuette\"><strong>@jderuette</strong></a></p>");
 
-        // Test without gfmIssues
+        // Test without gfmUsers
         config.setMarkdownExtensions("");
         parser = new Parser(config);
         documentModel = parser.processFile(mdGfmUsers);
         Assert.assertNotNull(documentModel);
         assertThat(documentModel.getBody()).contains("A GitHub User @jderuette");
+    }
+    
+    @Test
+    public void parseValidMdFileGitLab() {
+        config.setMarkdownExtensions("");
+        config.setMarkdownExtensions("gitLab");
+
+        // Test with gitLab
+        Parser parser = new Parser(config);
+        DocumentModel documentModel = parser.processFile(mdGitLab);
+        Assert.assertNotNull(documentModel);
+        assertThat(documentModel.getBody()).contains("<blockquote>\n" + 
+        		"<p>a multiline block quote and a seconde line and a third and last</p>\n" + 
+        		"</blockquote>");
+        assertThat(documentModel.getBody()).contains("<del> deleted marker</del>");
+        assertThat(documentModel.getBody()).contains("<ins>added marker</ins>");
+
+        // Test without gitLab
+        config.setMarkdownExtensions("");
+        parser = new Parser(config);
+        documentModel = parser.processFile(mdGitLab);
+        Assert.assertNotNull(documentModel);
+        assertThat(documentModel.getBody()).contains("<blockquote>\n" + 
+        		"<p>a multiline block quote and a seconde line and a third and last</p>\n" +
+        		"</blockquote>");
+        		assertThat(documentModel.getBody()).contains("<p>[- deleted marker-][+added marker+]</p>");
     }
     
 }
